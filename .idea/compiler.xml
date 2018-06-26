@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="iexTrading" />
+        <module name="StockChecker" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="iexTrading" target="1.8" />
+      <module name="StockChecker" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
