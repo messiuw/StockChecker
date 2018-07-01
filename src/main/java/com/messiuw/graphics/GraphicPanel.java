@@ -155,7 +155,8 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
 
             p_graphics2D.fillOval(x1.intValue(),y1.intValue(),10,10);
 
-            p_graphics2D.draw(new Line2D.Double(x1,y1,x2,y2));
+            //p_graphics2D.draw(new Line2D.Double(x1,y1,x2,y2));
+            p_graphics2D.drawLine(x1.intValue(),y1.intValue(),x2.intValue(),y2.intValue());
         }
     }
 

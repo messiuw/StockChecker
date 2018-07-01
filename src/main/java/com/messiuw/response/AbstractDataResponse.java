@@ -42,6 +42,14 @@ public abstract class AbstractDataResponse implements GraphicsDataIF, ResponseKe
         return this.jsonArray;
     }
 
+    protected void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+
+    protected void setJsonArray(JSONArray jsonArray) {
+        this.jsonArray = jsonArray;
+    }
+
     public String toString() {
         return this.getJsonArray().toString();
     }

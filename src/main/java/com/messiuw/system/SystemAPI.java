@@ -22,5 +22,9 @@ public class SystemAPI {
         showErrorDialog(message,callingClass.getSimpleName());
     }
 
+    public static void printDebugMessage(String message, Class callingClass) {
+        System.out.println(callingClass.getName() + ": " + message);
+    }
+
 }
 

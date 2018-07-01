@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Created by matthias.polkehn on 09.03.2018.
@@ -60,7 +59,7 @@ public class StockResult extends AbstractDataResponse {
             } else if (this.finalQuery.contains("list")) {
                 keyName = COMPANY_NAME_KEY_NAME;
             } else {
-                SystemAPI.showInfoDialog("","");
+                SystemAPI.showInfoDialog("The query does not contain any valid request parameter","StockResult");
             }
             analyzer.analyze(keyName);
             setSuperKeyName(analyzer.getKeyName());
@@ -92,13 +91,9 @@ public class StockResult extends AbstractDataResponse {
             analyze();
         }
 
-        extractDataToPlotFromFullData(dataToPlot);
-        // in some cases there are values of -1 in the data, so we want to remove them in order to get a clean plot
-        if (this.dataMapForPlot.containsValue(OMITTED_VALUES)) {
-            removeNegativeValues();
-        }
+        prepareData(dataToPlot);
 
-        gatherMetaDataForPlot(dataToPlot);
+        this.dataMapForPlot.forEach((key,value) -> System.out.println(key + " " + value));
 
         new PlotChart(this.dataMapForPlot,this.metaDataForPlot);
     }
@@ -108,23 +103,24 @@ public class StockResult extends AbstractDataResponse {
      * @param dataToPlot An Enum corresponding to the available plot types
      */
     private void extractDataToPlotFromFullData(DataToPlot dataToPlot) {
-        String key;
-        String value;
-        Map<String, String> innerMap;
         if (this.dataMapForPlot == null) {
-            this.dataMapForPlot = new LinkedHashMap<>(dataMapInContainer.size());
+            this.dataMapForPlot = new LinkedHashMap<>(this.dataMapInContainer.size());
         }
-
-        for (Map.Entry<String,Map<String,String>> outerMap : this.dataMapInContainer.entrySet()) {
-            innerMap = outerMap.getValue();
-            key = outerMap.getKey();
-            value = innerMap.get(dataToPlot.getValue());
-            this.dataMapForPlot.put(key,value);
-        }
+        this.dataMapForPlot = analyzer.extractDataToPlot(dataToPlot);
     }
 
     private void removeNegativeValues() {
         this.dataMapForPlot.entrySet().removeIf(entry -> entry.getValue().equalsIgnoreCase(OMITTED_VALUES));
+    }
+
+    private void prepareData(DataToPlot dataToPlot) {
+        extractDataToPlotFromFullData(dataToPlot);
+        // in some cases there are values of -1 in the data, so we want to remove them in order to get a clean plot
+        if (this.dataMapForPlot.containsValue(OMITTED_VALUES)) {
+            removeNegativeValues();
+        }
+
+        gatherMetaDataForPlot(dataToPlot);
     }
 
 }

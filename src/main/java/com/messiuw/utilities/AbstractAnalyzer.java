@@ -16,8 +16,8 @@ public abstract class AbstractAnalyzer {
     protected JSONObject jsonObject = null;
     protected JSONArray jsonArray = null;
 
-    private Map<String,String> dataMap = new LinkedHashMap<>();
-    private Map<String,Map<String,String>> dataSortedBySuperKey = new LinkedHashMap<>();
+    protected Map<String,String> dataMap = new LinkedHashMap<>();
+    protected Map<String,Map<String,String>> dataSortedBySuperKey = new LinkedHashMap<>();
 
     private static final boolean DEBUG = false;
 
@@ -98,7 +98,11 @@ public abstract class AbstractAnalyzer {
         return this.keyName;
     }
 
+    protected void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
 
-
-
+    protected void setJsonArray(JSONArray jsonArray) {
+        this.jsonArray = jsonArray;
+    }
 }
