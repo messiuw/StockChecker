@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,9 +20,6 @@ class StockAnalyzer extends AbstractAnalyzer {
 
     StockAnalyzer(JSONArray jsonArray) {
         this.jsonArray = jsonArray;
-    }
-
-    StockAnalyzer() {
     }
 
     void analyzeOhlc() {
@@ -44,5 +42,37 @@ class StockAnalyzer extends AbstractAnalyzer {
         }
 
         return Collections.unmodifiableMap(returnMap);
+    }
+
+    @Override
+    protected void putJsonObjectInContainer(JSONObject jsonObject, Map<String,String> inputOutputMap) {
+        for (String key : jsonObject.keySet()) {
+            Object object = jsonObject.get(key);
+            putObjectInMap(object,key,inputOutputMap);
+        }
+    }
+
+    @Override
+    protected void putJsonArrayInContainer() {
+        Object object;
+        JSONObject jsonObject;
+        Map<String,String> data;
+        String superKey;
+
+        for (int entry=0; entry<this.jsonArray.length(); entry++) {
+            object = this.jsonArray.get(entry);
+            data = new HashMap<>();
+            if (object instanceof JSONObject) {
+                jsonObject = (JSONObject) object;
+                superKey = (String) jsonObject.get(this.keyName);
+                putJsonObjectInContainer(jsonObject,data);
+                putMapInContainer(superKey,data);
+            }
+        }
+    }
+
+    @Override
+    protected void putJsonObjectInContainer() {
+        putJsonObjectInContainer(this.jsonObject,this.dataMap);
     }
 }

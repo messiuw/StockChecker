@@ -12,4 +12,5 @@ public interface GraphicsDataIF {
     String X_AXIS_LABEL = "xLabel";
     String Y_AXIS_LABEL = "yLabel";
     String DATA_TO_PLOT = "dataToPlot";
+    String CHARTNAME = "chartname";
 }

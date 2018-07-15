@@ -5,13 +5,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public abstract class AbstractAnalyzer {
 
-    private String keyName;
+    protected String keyName;
 
     protected JSONObject jsonObject = null;
     protected JSONArray jsonArray = null;
@@ -36,36 +35,13 @@ public abstract class AbstractAnalyzer {
         analyze(null);
     }
 
-    private void putJsonObjectInContainer() {
-        putJsonObjectInContainer(this.jsonObject,this.dataMap);
-    }
+    protected abstract void putJsonArrayInContainer();
 
-    private void putJsonObjectInContainer(JSONObject jsonObject, Map<String,String> inputOutputMap) {
-        for (String key : jsonObject.keySet()) {
-            Object object = jsonObject.get(key);
-            putObjectInMap(object,key,inputOutputMap);
-        }
-    }
+    protected abstract void putJsonObjectInContainer();
 
-    private void putJsonArrayInContainer() {
-        Object object;
-        JSONObject jsonObject;
-        Map<String,String> data;
-        String superKey;
+    protected abstract void putJsonObjectInContainer(JSONObject jsonObject, Map<String,String> inputOutputMap);
 
-        for (int entry=0; entry<this.jsonArray.length(); entry++) {
-            object = this.jsonArray.get(entry);
-            data = new HashMap<>();
-            if (object instanceof JSONObject) {
-                jsonObject = (JSONObject) object;
-                superKey = (String) jsonObject.get(this.keyName);
-                putJsonObjectInContainer(jsonObject,data);
-                putMapInContainer(superKey,data);
-            }
-        }
-    }
-
-    private void putObjectInMap(Object p_value, String p_key, Map<String,String> p_inOutMap) {
+    protected void putObjectInMap(Object p_value, String p_key, Map<String,String> p_inOutMap) {
         if (p_value instanceof String) {
             p_inOutMap.put(p_key,(String) p_value);
         } else if (p_value instanceof Double) {
@@ -80,7 +56,7 @@ public abstract class AbstractAnalyzer {
         }
     }
 
-    private void putMapInContainer(String superKey, Map<String,String> innerMap) {
+    protected void putMapInContainer(String superKey, Map<String,String> innerMap) {
         if (superKey != null) {
             this.dataSortedBySuperKey.put(superKey,innerMap);
         }

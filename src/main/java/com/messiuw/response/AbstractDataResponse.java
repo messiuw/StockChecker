@@ -72,8 +72,9 @@ public abstract class AbstractDataResponse implements GraphicsDataIF, ResponseKe
             ex.printStackTrace();
         }
         this.metaDataForPlot.put(INCREMENT_Y,getIncrementOnOrdinate());
-        this.metaDataForPlot.put(X_AXIS_LABEL,null);
+        this.metaDataForPlot.put(X_AXIS_LABEL,this.superKeyName);
         this.metaDataForPlot.put(Y_AXIS_LABEL,p_ordinateData.getValue());
+        this.metaDataForPlot.put(CHARTNAME,getNameForChart(p_ordinateData));
     }
 
     protected void printDatamap() {
@@ -98,9 +99,7 @@ public abstract class AbstractDataResponse implements GraphicsDataIF, ResponseKe
         Double doubleValue;
 
         for (int entry=0; entry < this.dataMapInContainer.size(); entry++) {
-            System.out.println(entry);
             String valueAsString = getNthEntryOfInnerMap(entry,p_dataToPlot.getValue());
-            System.out.println(valueAsString);
             if (valueAsString != null) {
                 doubleValue = Double.parseDouble(valueAsString);
                 if (doubleValue < minValue) {
@@ -181,5 +180,10 @@ public abstract class AbstractDataResponse implements GraphicsDataIF, ResponseKe
             counter++;
         }
         return null;
+    }
+
+    private String getNameForChart(DataToPlot p_ordinateData) {
+        String[] splittedQuery = this.finalQuery.split("/");
+        return splittedQuery[4].toUpperCase()+" "+p_ordinateData.getValue()+" for '"+splittedQuery[2]+"'";
     }
 }

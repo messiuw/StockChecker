@@ -1,13 +1,15 @@
 package com.messiuw.graphics;
 
-import com.messiuw.query.StockData;
-import com.messiuw.response.AbstractDataResponse;
 import com.messiuw.utilities.GraphicsDataIF;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
@@ -17,16 +19,15 @@ import java.util.List;
 public class GraphicPanel extends JPanel implements GraphicsDataIF {
     private Map<String,String> data;
     private Map<String,String> axisData;
+    private static final Stroke GRAPH_STROKE = new BasicStroke(2f);
     private static final int TICS_LENGTH = 10;
     private static final int AXIS_PADDING = 50;
     private static final int LABEL_PADDING = 10;
-    private static final Color LINE_COLOR = new Color(44, 102, 230, 180);
-    private static final  Color POINT_COLOR = new Color(100, 100, 100, 180);
-    private static final Color GRID_COLOR = new Color(200, 200, 200, 200);
-    private static final Stroke GRAPH_STROKE = new BasicStroke(2f);
-    private static final int POINT_WIDTH = 4;
     private static final int Y_TICS_NUM = 20;
-    private static final int X_TICS_NUM = 10;
+    private static final int Y_TICS_THRESHOLD = 12;
+    private static final int X_TICS_NUM = 5;
+    private static final int X_TICS_THRESHOLD = 8;
+    private static final int POINT_WIDTH = 10;
 
     private List<Integer> xTicsList = new ArrayList<>();
     private List<Integer> yTicsList = new ArrayList<>();
@@ -34,16 +35,11 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
     private Font labelFont = new Font("Arial",Font.ITALIC,10);
     private Font axisFont = new Font("Arial",Font.BOLD,16);
 
-    private String dataToPlot;
-
-    private static final boolean DEBUG = false;
-
+    private boolean isDate = true;
 
     public GraphicPanel(Map<String,String> p_inputMap, Map<String,String> p_axisData) {
         this.data = p_inputMap;
         this.axisData = p_axisData;
-
-        this.dataToPlot = this.axisData.get(DATA_TO_PLOT);
     }
 
     @Override
@@ -60,12 +56,10 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
         drawBorder(graphics2D);
 
         // create tics along X & Y
-        createTicsAlongAxis(graphics2D,Axis.X);
-        createTicsAlongAxis(graphics2D,Axis.Y);
+        createTicsAlongAxis(graphics2D);
 
         // write labels to tics on axes
-        writeTicsLabels(graphics2D,Axis.X);
-        writeTicsLabels(graphics2D,Axis.Y);
+        writeTicsLabels(graphics2D);
 
         // write label legend
         writeAxisLabels(graphics2D);
@@ -82,85 +76,98 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
         p_graphics2D.setStroke(oldStroke);
     }
 
-    private void createTicsAlongAxis(Graphics2D p_graphics2D, Axis axis) {
-        int distanceBetweenTics;
-        if (DEBUG) p_graphics2D.setColor(Color.RED);
-        if (Axis.Y.equals(axis)) {
-            distanceBetweenTics = getHeight()/(Y_TICS_NUM);
-            if (DEBUG) System.out.println("A tic will be set every " + distanceBetweenTics + " pixels");
-            for (int tic=1;tic<=Y_TICS_NUM;tic++) {
-                if (tic*distanceBetweenTics <= AXIS_PADDING) {
-                    continue;
-                }
-                if (tic*distanceBetweenTics >= getHeight()-AXIS_PADDING) {
-                    break;
-                }
-                if (DEBUG) System.out.println("Tic no. " + tic + " will be set at " + (tic*distanceBetweenTics) + " pixels in y direction");
-                yTicsList.add((tic*distanceBetweenTics));
-                p_graphics2D.drawLine(AXIS_PADDING,(tic*distanceBetweenTics),AXIS_PADDING+TICS_LENGTH,(tic*distanceBetweenTics));
-                p_graphics2D.drawLine(getWidth()-AXIS_PADDING,(tic*distanceBetweenTics),getWidth()-(AXIS_PADDING+TICS_LENGTH),tic*distanceBetweenTics);
-            }
-        } else if (Axis.X.equals(axis)) {
-            distanceBetweenTics = getWidth()/(X_TICS_NUM);
-            if (DEBUG) System.out.println("A tic will be set every " + distanceBetweenTics + " pixels.");
-            for (int tic=1;tic<=X_TICS_NUM;tic++) {
-                if (tic*distanceBetweenTics <= AXIS_PADDING) {
-                    continue;
-                }
-                if (tic*distanceBetweenTics >= getWidth()-AXIS_PADDING) {
-                    break;
-                }
-                if (DEBUG) System.out.println("Tic no. " + tic + " will be set at " + (tic*distanceBetweenTics) + " pixels in x direction");
-                xTicsList.add((tic*distanceBetweenTics));
-                p_graphics2D.drawLine((tic*distanceBetweenTics),AXIS_PADDING,(tic*distanceBetweenTics),AXIS_PADDING+TICS_LENGTH);
-                p_graphics2D.drawLine((tic*distanceBetweenTics),getHeight()-AXIS_PADDING,(tic*distanceBetweenTics),getHeight()-(AXIS_PADDING+TICS_LENGTH));
-            }
+    private void createTicsAlongAxis(Graphics2D p_graphics2D) {
+        int xTicsNum = this.data.size() < X_TICS_THRESHOLD ? this.data.size() : X_TICS_NUM;
+        int distanceBetweenXTics = (getWidth() - 2*AXIS_PADDING)/(xTicsNum-1);
+        xTicsList.add(AXIS_PADDING);
+        for (int tic=1; tic<xTicsNum; tic++) {
+            int xPosition = tic*distanceBetweenXTics+AXIS_PADDING;
+            xTicsList.add(xPosition);
+            p_graphics2D.drawLine(xPosition,getHeight()-AXIS_PADDING,xPosition,getHeight()-AXIS_PADDING-TICS_LENGTH);
+            p_graphics2D.drawLine(xPosition,AXIS_PADDING,xPosition,AXIS_PADDING+TICS_LENGTH);
         }
+
+        int yTicsNum = this.data.size() < Y_TICS_THRESHOLD ? this.data.size() : Y_TICS_NUM;
+        int distanceBetweenYTics = (getHeight() - 2*AXIS_PADDING)/(yTicsNum-1);
+        yTicsList.add(AXIS_PADDING);
+        for (int tic=1; tic<yTicsNum; tic++) {
+            int yPosition = tic*distanceBetweenYTics+AXIS_PADDING;
+            yTicsList.add(yPosition);
+            p_graphics2D.drawLine(AXIS_PADDING,yPosition,AXIS_PADDING+TICS_LENGTH,yPosition);
+            p_graphics2D.drawLine(getWidth()-AXIS_PADDING,yPosition,getWidth()-(AXIS_PADDING+TICS_LENGTH),yPosition);
+        }
+        // we have to reverse the list because the jpanel is designed from top to bottom and not bottom to top
+        Collections.reverse(yTicsList);
     }
 
-    private void writeAxisLabels(Graphics2D p_graphics2D) {
-        if (DEBUG) p_graphics2D.setColor(Color.BLUE);
-        // x label
-        String xLabel = getDefaultValueIfNull();
-        drawCenteredString(p_graphics2D,xLabel);
-        // y label
-        String yLabel = (String) this.axisData.get(AbstractDataResponse.Y_AXIS_LABEL);
-        //drawRotate(p_graphics2D,270,yLabel);
-    }
-
-    private void plotData(Graphics2D p_graphics2D) {
-
-        List<Point2D.Double> graphPoints = new ArrayList<>();
-        Point2D.Double point;
-
-        double maxY = Double.parseDouble(axisData.get(MAX_Y));
-        double minY = Double.parseDouble(axisData.get(MIN_Y));
-
-        double xScale = ((double) getWidth() - (2 * AXIS_PADDING)) / (data.size() - 1);
-        double yScale = ((double) getHeight() - (2 * AXIS_PADDING)) /( maxY - minY);
+    private void writeTicsLabels(Graphics2D p_graphics2d) {
+        Point position;
 
         int counter = 0;
-        for (String date : data.keySet()) {
-            double x1 = (counter * xScale + AXIS_PADDING);
-            double y1 = (maxY - Double.parseDouble(data.get(date))) * yScale + AXIS_PADDING;
-            graphPoints.add(new Point2D.Double(x1,y1));
+        String xLabel;
+        for (Integer xPosition : xTicsList) {
+            try {
+                xLabel = getNthEntryFromMap(true,counter);
+                Date labelAsDate = new SimpleDateFormat("yyyy-MM-dd").parse(xLabel);
+                xLabel = new SimpleDateFormat("dd.MM.").format(labelAsDate);
+            } catch (ParseException pse) {
+                this.isDate = false;
+                xLabel = calculateLabel(Axis.X,counter);
+            }
+            position = new Point(xPosition,getHeight()-30);
+            drawStringCenteredAt(p_graphics2d,xLabel,position);
             counter++;
         }
 
-        for (int entry=0; entry<graphPoints.size()-1; entry++) {
-            Double x1 = graphPoints.get(entry).x;
-            Double x2 = graphPoints.get(entry+1).x;
-            Double y1 = graphPoints.get(entry).y;
-            Double y2 = graphPoints.get(entry+1).y;
-
-            p_graphics2D.fillOval(x1.intValue(),y1.intValue(),10,10);
-
-            //p_graphics2D.draw(new Line2D.Double(x1,y1,x2,y2));
-            p_graphics2D.drawLine(x1.intValue(),y1.intValue(),x2.intValue(),y2.intValue());
+        counter = 0;
+        String yLabel;
+        for (Integer yPosition : yTicsList) {
+            yLabel = calculateLabel(Axis.Y,counter);
+            position = new Point(AXIS_PADDING / 2, yPosition);
+            drawStringCenteredAt(p_graphics2d, yLabel, position);
+            counter++;
         }
     }
 
+    private String calculateLabel(Axis axis, int counter) {
+        double minValue = 0;
+        double maxValue;
+        double increment = 0;
 
+        if (Axis.X.equals(axis)) {
+            if ("date".equalsIgnoreCase(this.axisData.get(GraphicsDataIF.X_AXIS_LABEL))) {
+                System.out.println();
+            } else {
+                minValue = Double.parseDouble(this.axisData.get(GraphicsDataIF.MIN_X));
+                maxValue = Double.parseDouble(this.axisData.get(GraphicsDataIF.MAX_X));
+                increment = (maxValue-minValue)/((double)this.xTicsList.size()-1);
+            }
+        }
+        if (Axis.Y.equals(axis)) {
+            minValue = Double.parseDouble(this.axisData.get(GraphicsDataIF.MIN_Y));
+            maxValue = Double.parseDouble(this.axisData.get(GraphicsDataIF.MAX_Y));
+            increment = (maxValue-minValue)/((double)this.yTicsList.size()-1);
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat(".##");
+        return decimalFormat.format(minValue+counter*increment);
+    }
+
+    private void writeAxisLabels(Graphics2D p_graphics2D) {
+        // x label
+        String xLabel = getDefaultValueIfNull();
+        xLabel = Character.toUpperCase(xLabel.charAt(0)) + xLabel.substring(1);
+        drawCenteredString(p_graphics2D,xLabel);
+        // y label
+        String yLabel = "US $";
+        drawRotate(p_graphics2D,270,yLabel);
+    }
+
+    private void plotData(Graphics2D p_graphics2D) {
+        List<Point2D> dataPoints = calculateDataPoints();
+        drawPoints(dataPoints,p_graphics2D);
+        drawLine(dataPoints,p_graphics2D);
+    }
 
     private void drawRotate(Graphics2D p_graphics2D, int angle, String text) {
         // we use a factor of 2 such that it looks a little bit nicer
@@ -180,12 +187,6 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
         p_graphics2D.drawString(text, x, y);
     }
 
-    private void drawStringAt(Graphics2D p_graphics2D, String text, Point point) {
-        p_graphics2D.setFont(labelFont);
-        p_graphics2D.drawString(text,point.x,point.y);
-
-    }
-
     private void drawStringCenteredAt(Graphics2D p_graphics2d, String text, Point point) {
         int x = point.x;
         int y = point.y;
@@ -193,10 +194,7 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
         p_graphics2d.setFont(labelFont);
         FontMetrics metrics = p_graphics2d.getFontMetrics();
         int stringCenter = metrics.stringWidth(text)/2;
-        if(DEBUG) System.out.println(metrics.stringWidth(text));
         p_graphics2d.drawString(text,x-stringCenter,y);
-
-
     }
 
     private int getCenter(Graphics2D p_graphics2D, Axis axis, String p_text) {
@@ -234,52 +232,66 @@ public class GraphicPanel extends JPanel implements GraphicsDataIF {
        return null;
     }
 
-    private void writeTicsLabels(Graphics2D p_graphics2d, Axis axis) {
-        Point position;
-        String xLabel;
-        String yLabel;
-        int counter = 0;
-
-        if (Axis.X.equals(axis)) {
-            for (Integer xPosition : xTicsList) {
-                if (DEBUG) System.out.println(xPosition);
-                xLabel = getNthEntryFromMap(true,counter*(this.data.size()/X_TICS_NUM));
-                xLabel = removeTrailingZeros(xLabel);
-                // todo: make the y position more variable in terms of padding...
-                position = new Point(xPosition,getHeight()-10);
-                drawStringCenteredAt(p_graphics2d,xLabel,position);
-                counter++;
-            }
-        }
-
-        if (Axis.Y.equals(axis)) {
-            for (Integer yPosition : yTicsList) {
-                if (DEBUG) System.out.println(yPosition);
-                yLabel = getNthEntryFromMap(false,counter*(this.data.size()/Y_TICS_NUM));
-                position = new Point(AXIS_PADDING/2,yPosition);
-                drawStringCenteredAt(p_graphics2d,yLabel,position);
-                counter++;
-            }
-        }
-    }
-
     private void initializeArrays() {
-        if (!xTicsList.isEmpty() && !yTicsList.isEmpty()) {
-            xTicsList.clear();
-            yTicsList.clear();
-        }
-
-        xTicsList.add(AXIS_PADDING);
-        yTicsList.add(AXIS_PADDING);
+        xTicsList.clear();
+        yTicsList.clear();
     }
 
-    private String removeTrailingZeros(String label) {
-        String[] splittedLabel;
-        if (label != null && label.length() == 8) {
-            splittedLabel = label.split(":");
-            return splittedLabel[0]+":"+splittedLabel[1];
+    private List<Point2D> calculateDataPoints() {
+        double minY = Double.parseDouble(this.axisData.get(GraphicsDataIF.MIN_Y));
+        double maxY = Double.parseDouble(this.axisData.get(GraphicsDataIF.MAX_Y));
+        double yOffset = getHeight()-AXIS_PADDING;
+        double yScaling = (double)(getHeight()-2*AXIS_PADDING)/(maxY-minY);
+        yScaling *= (-1);
+
+        double minX=0;
+        double maxX;
+        double xOffset=0;
+        double xScaling=0;
+        if (!isDate) {
+            minX = Double.parseDouble(this.axisData.get(GraphicsDataIF.MIN_X));
+            maxX = Double.parseDouble(this.axisData.get(GraphicsDataIF.MAX_X));
+            xOffset = AXIS_PADDING;
+            xScaling = (double)(getWidth()-2*AXIS_PADDING)/(maxX-minX);
         }
-        return label;
+        List<Point2D> dataPoints = new ArrayList<>();
+        int counter = 0;
+        for (Map.Entry<String,String> dataEntry : this.data.entrySet()) {
+            double xValueScaled;
+            if (!isDate) {
+                double xValueDouble = Double.parseDouble(dataEntry.getKey());
+                xValueDouble -= minX;
+                xValueScaled = (xValueDouble*xScaling)+xOffset;
+            } else {
+                xValueScaled = (double)this.xTicsList.get(counter);
+            }
+
+            double yValueDouble = Double.parseDouble(dataEntry.getValue());
+            yValueDouble -= minY;
+            double yValueScaled = (yValueDouble*yScaling)+yOffset;
+
+            dataPoints.add(new Point2D.Double(xValueScaled,yValueScaled));
+            counter++;
+        }
+        return dataPoints;
+    }
+
+    private void drawPoints(List<Point2D> dataPointList, Graphics2D p_graphics2D) {
+        int internalOffset = POINT_WIDTH /2;
+        for (Point2D point : dataPointList) {
+            Shape ellipse = new Ellipse2D.Double(point.getX()-internalOffset,point.getY()-internalOffset, POINT_WIDTH, POINT_WIDTH);
+            p_graphics2D.draw(ellipse);
+        }
+    }
+
+    private void drawLine(List<Point2D> dataPointList, Graphics2D p_graphics2D) {
+        for (int data=0; data<dataPointList.size()-1; data++) {
+            Point2D dataPoint = dataPointList.get(data);
+            Point2D nextDataPoint = dataPointList.get(data+1);
+
+            Shape line = new Line2D.Double(dataPoint.getX(),dataPoint.getY(),nextDataPoint.getX(),nextDataPoint.getY());
+            p_graphics2D.draw(line);
+        }
     }
 
 }

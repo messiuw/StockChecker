@@ -1,10 +1,10 @@
 package com.messiuw.stocks;
 
+import com.messiuw.graphics.Plot;
 import com.messiuw.response.AbstractDataResponse;
 import com.messiuw.system.SystemAPI;
 import com.messiuw.graphics.DataToPlot;
 import com.messiuw.exceptions.IexTradingException;
-import com.messiuw.graphics.PlotChart;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -81,7 +81,7 @@ public class StockResult extends AbstractDataResponse {
         }
     }
 
-    public void plotChart(DataToPlot dataToPlot) {
+    public void plotData(DataToPlot dataToPlot) {
         if (!this.finalQuery.contains("chart")) {
             SystemAPI.showInfoDialog("This type of query is not yet available to plot.","Not available");
             return;
@@ -93,9 +93,7 @@ public class StockResult extends AbstractDataResponse {
 
         prepareData(dataToPlot);
 
-        this.dataMapForPlot.forEach((key,value) -> System.out.println(key + " " + value));
-
-        new PlotChart(this.dataMapForPlot,this.metaDataForPlot);
+        new Plot(this.dataMapForPlot,this.metaDataForPlot);
     }
 
     /**
@@ -119,7 +117,6 @@ public class StockResult extends AbstractDataResponse {
         if (this.dataMapForPlot.containsValue(OMITTED_VALUES)) {
             removeNegativeValues();
         }
-
         gatherMetaDataForPlot(dataToPlot);
     }
 
